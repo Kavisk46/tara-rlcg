@@ -52,6 +52,21 @@ class TaraSettings(BaseSettings):
         description="Transformers model used as the backbone for task classification.",
     )
 
+    # --- Lexical retrieval ---
+    bm25_k1: float = Field(
+        default=1.5,
+        gt=0.0,
+        description="BM25 term-frequency saturation parameter (k1); higher values let repeated term "
+        "occurrences contribute more to a document's score before saturating.",
+    )
+    bm25_b: float = Field(
+        default=0.75,
+        ge=0.0,
+        le=1.0,
+        description="BM25 document-length normalization parameter (b); 0 disables length normalization, "
+        "1 fully normalizes by document length relative to the corpus average.",
+    )
+
     # --- Code generation ---
     llm_model_name: str = Field(
         default="gpt-4o-mini",

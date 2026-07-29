@@ -18,15 +18,18 @@ Repository Parser            ← implemented
 Repository Context Extractor ← implemented
       │
       ▼
-Task Classifier               ← implemented (this increment)
+Task Classifier               ← implemented
       │
       ▼
-Task-Guided Adaptive Router   ← planned
+Task-Guided Adaptive Router   ← implemented (this increment)
       │
       ▼
 ┌───────────────┬───────────────┬───────────────┬────────────────┐
-│ Graph Retriever│ Dense Retriever│ API Retriever │ Static Analyzer│  ← planned
+│Lexical Retriever│ Dense Retriever│ API Retriever │ Static Analyzer│  ← planned
 └───────────────┴───────────────┴───────────────┴────────────────┘
+     (which of these run, in what order/parallelism, is decided by
+      the RetrievalPlan above -- this row is retrieval *execution*,
+      not yet implemented)
       │
       ▼
 Context Fusion                ← planned
@@ -50,21 +53,24 @@ tara-rlcg/
 │       ├── interfaces/            # abstract contracts for each pipeline stage
 │       ├── parsing/                # Repository Parser stage (implemented)
 │       ├── context/                # Repository Context Extractor stage (implemented)
-│       └── classification/         # Task Classifier stage (implemented)
+│       ├── classification/         # Task Classifier stage (implemented)
+│       └── routing/                # Task-Guided Adaptive Router stage (implemented)
 └── tests/
     ├── parsing/
     ├── context/
-    └── classification/
+    ├── classification/
+    └── routing/
 ```
 
 Each pipeline stage lives in its own subpackage of `src/tara/`, depends
 on the stage(s) before it only through an `abc.ABC` interface in
 `tara.interfaces`, and is unit-testable in isolation. This is Dependency
 Inversion applied at the pipeline level: the Task Classifier depends on
-`tara.interfaces.context_extractor.ContextExtractor`, never on a
-concrete extractor implementation, and the upcoming Task-Guided Adaptive
-Router will depend only on `tara.interfaces.task_classifier.TaskClassifier`
-— so every implementation can be swapped or mocked freely.
+`tara.interfaces.context_extractor.ContextExtractor`, the Router depends
+only on `tara.interfaces.task_classifier.TaskClassifier`, and the
+upcoming retrieval stage will depend only on
+`tara.interfaces.router.Router` — so every implementation can be
+swapped or mocked freely.
 
 ## Implementation status
 
@@ -195,19 +201,88 @@ domain-specific `RuleEngine` (e.g. with extra rules appended) without
 touching this class, and tests can inject a single fake `Rule` to
 exercise the combination logic in isolation.
 
+### Task-Guided Adaptive Router (`tara.routing`) — implemented
+
+Decides **what** to retrieve with and **how** — never retrieval itself.
+Turns a `TaskClassification` plus a `RepositoryContext` into a
+`RetrievalPlan`: which retriever kind(s) to run, in what order,
+sequentially or in parallel, with what top-k / candidate pool / graph
+depth, and whether to rerank. No LLM, no repository traversal, no
+embedding generation — this stage only builds a plan, and does so in
+well under the 2ms budget (a handful of boolean checks and one `sorted`
+call over at most three items).
+
+- `tara.interfaces.router.Router` — the abstract contract (one method:
+  `route(classification, context) -> RetrievalPlan`).
+- `tara.routing.router.AdaptiveRouter` — the reference implementation.
+  Pure orchestration over two injected collaborators (an ordered tuple
+  of `RoutingPolicy` and a `RetrievalPlanner`); it owns no policy or
+  planning logic itself.
+- `tara.routing.strategy.RoutingStrategy` — seven strategies
+  (`LEXICAL_ONLY`, `SEMANTIC_ONLY`, `GRAPH_ONLY`, `HYBRID`,
+  `GRAPH_PLUS_SEMANTIC`, `LEXICAL_PLUS_GRAPH`, `FULL_PIPELINE`), a
+  strict refinement of the Task Classifier's coarser
+  `RetrievalStrategy`. `STRATEGY_RETRIEVERS` is the single source of
+  truth for which `RetrieverKind`s each strategy implies (a new
+  `RetrieverKind.LEXICAL` member was added for BM25/keyword-style
+  retrieval, which didn't previously have a concrete kind).
+- `tara.routing.policies` — five isolated, named policies
+  (`FullPipelinePolicy`, `GraphPolicy`, `HybridPolicy`, `LexicalPolicy`,
+  `SemanticPolicy`), each a pure `TaskClassification -> RoutingDecision`
+  function that never sees another policy or the `RepositoryContext`.
+  `AdaptiveRouter` evaluates `DEFAULT_POLICIES` in order and uses the
+  **first applicable policy** — policy order *is* the conflict-
+  resolution mechanism, most specific first, with `SemanticPolicy` as a
+  universal catch-all last. `FullPipelinePolicy` additionally fires
+  whenever `task_type is REFACTOR`, regardless of the raw flags: safely
+  refactoring a symbol needs to find it (lexical), understand it
+  (semantic), and map its dependents (graph) all at once.
+- `tara.routing.planner.RetrievalPlanner` — turns the winning
+  `RoutingDecision` into the final `RetrievalPlan`: deduplicates
+  retrievers, orders them cheapest-first (`RETRIEVER_EXECUTION_PRIORITY`),
+  sets `parallel=True` whenever more than one retriever is selected,
+  sets `rerank=True` whenever `parallel` is True *or* the classifier
+  flagged `reasoning_required`, assigns `top_k`/`candidate_limit` per
+  strategy, and sets `graph_depth`/`expand_neighbors` whenever `GRAPH`
+  participates. It also **downgrades** a decision the concrete
+  `RepositoryContext` can't actually support — e.g. drops `DENSE` if
+  `context.embeddings` is empty, drops `GRAPH` if the context graph has
+  no files indexed yet, and falls back to `LEXICAL` if everything else
+  was dropped — using only O(1) metadata checks (`bool(embeddings)`,
+  `DiGraph.number_of_nodes()`), never a traversal.
+- `tara.routing.models.RetrievalPlan` — the Pydantic result contract:
+  `strategy`, `retrievers`, `execution_order`, `parallel`, `graph_depth`,
+  `expand_neighbors`, `rerank`, `top_k`, `candidate_limit`, `reason`,
+  and `metadata` (which records the winning policy's name and the
+  classifier's own `retriever_kind` recommendation, for observability).
+
+Both collaborators are injected through `AdaptiveRouter.__init__`
+(`policies` defaults to `DEFAULT_POLICIES`, `planner` defaults to a
+plain `RetrievalPlanner()`), so tests substitute a custom policy tuple
+or a custom planner without touching this class.
+
+#### Worked examples (verified end-to-end against the real Task Classifier)
+
+| Query | Strategy | Retrievers | Notable fields |
+|---|---|---|---|
+| "Find parse_repository" | `LEXICAL_ONLY` | lexical | `top_k=10` |
+| "Explain RepositoryContextExtractor" | `SEMANTIC_ONLY` | dense | `top_k=8` |
+| "Trace login flow" | `GRAPH_ONLY` | graph | `graph_depth=3`, `expand_neighbors=True` |
+| "Where is JWT implemented?" | `HYBRID` | lexical + dense | `parallel=True`, `top_k=15`, `rerank=True` |
+| "Refactor RepositoryParser" | `FULL_PIPELINE` | lexical + dense + graph | `rerank=True` |
+
 ### Planned next
 
-1. **Task-Guided Adaptive Router** (`tara.routing`) — maps a
-   `TaskClassification` to a weighted combination of retrievers.
-2. **Retrievers** (`tara.retrieval`) — `GraphRetriever` (traverses
-   `RepositoryContext.graph`), `DenseRetriever` (embeddings already in
-   `RepositoryContext.embeddings` + FAISS), `APIRetriever`,
-   `StaticAnalyzer`.
-3. **Context Fusion** (`tara.fusion`) — merges retriever outputs into a
+1. **Retrievers** (`tara.retrieval`) — the concrete implementations a
+   `RetrievalPlan` is executed against: `LexicalRetriever` (BM25),
+   `GraphRetriever` (traverses `RepositoryContext.graph`),
+   `DenseRetriever` (embeddings already in `RepositoryContext.embeddings`
+   + FAISS), `APIRetriever`, `StaticAnalyzer`.
+2. **Context Fusion** (`tara.fusion`) — merges retriever outputs into a
    single ranked context window under a token budget.
-4. **Code Generator** (`tara.generation`) — prompts the configured LLM
+3. **Code Generator** (`tara.generation`) — prompts the configured LLM
    with the fused context and returns generated code.
-5. **API** (`tara.api`) — a FastAPI service exposing the end-to-end
+4. **API** (`tara.api`) — a FastAPI service exposing the end-to-end
    pipeline.
 
 ## Getting started
