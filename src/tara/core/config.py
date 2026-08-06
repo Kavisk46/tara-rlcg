@@ -66,6 +66,24 @@ class TaraSettings(BaseSettings):
         description="BM25 document-length normalization parameter (b); 0 disables length normalization, "
         "1 fully normalizes by document length relative to the corpus average.",
     )
+    lexical_name_weight: float = Field(
+        default=3.0,
+        ge=0.0,
+        description="Multiplier applied to a symbol/file name field's BM25 score when combining "
+        "per-field lexical search scores; an exact-name match is the strongest relevance signal.",
+    )
+    lexical_docstring_weight: float = Field(
+        default=2.0,
+        ge=0.0,
+        description="Multiplier applied to a docstring field's BM25 score when combining per-field "
+        "lexical search scores; a human-written summary is a stronger signal than raw source text.",
+    )
+    lexical_source_weight: float = Field(
+        default=1.0,
+        ge=0.0,
+        description="Multiplier applied to a source-code field's BM25 score when combining per-field "
+        "lexical search scores; the noisiest of the three fields, weighted lowest by default.",
+    )
 
     # --- Code generation ---
     llm_model_name: str = Field(

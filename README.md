@@ -21,15 +21,16 @@ Repository Context Extractor ← implemented
 Task Classifier               ← implemented
       │
       ▼
-Task-Guided Adaptive Router   ← implemented (this increment)
+Task-Guided Adaptive Router   ← implemented
       │
       ▼
 ┌───────────────┬───────────────┬───────────────┬────────────────┐
-│Lexical Retriever│ Dense Retriever│ API Retriever │ Static Analyzer│  ← planned
+│Lexical Retriever│ Dense Retriever│ API Retriever │ Static Analyzer│
+│  implemented   │    planned     │    planned     │    planned     │
 └───────────────┴───────────────┴───────────────┴────────────────┘
      (which of these run, in what order/parallelism, is decided by
-      the RetrievalPlan above -- this row is retrieval *execution*,
-      not yet implemented)
+      the RetrievalPlan above; Dense/API/Static retrieval execution
+      is not yet implemented)
       │
       ▼
 Context Fusion                ← planned
@@ -54,12 +55,14 @@ tara-rlcg/
 │       ├── parsing/                # Repository Parser stage (implemented)
 │       ├── context/                # Repository Context Extractor stage (implemented)
 │       ├── classification/         # Task Classifier stage (implemented)
-│       └── routing/                # Task-Guided Adaptive Router stage (implemented)
+│       ├── routing/                # Task-Guided Adaptive Router stage (implemented)
+│       └── retrieval/              # Lexical Retrieval (implemented); Dense/Graph planned
 └── tests/
     ├── parsing/
     ├── context/
     ├── classification/
-    └── routing/
+    ├── routing/
+    └── retrieval/
 ```
 
 Each pipeline stage lives in its own subpackage of `src/tara/`, depends
@@ -67,10 +70,15 @@ on the stage(s) before it only through an `abc.ABC` interface in
 `tara.interfaces`, and is unit-testable in isolation. This is Dependency
 Inversion applied at the pipeline level: the Task Classifier depends on
 `tara.interfaces.context_extractor.ContextExtractor`, the Router depends
-only on `tara.interfaces.task_classifier.TaskClassifier`, and the
-upcoming retrieval stage will depend only on
-`tara.interfaces.router.Router` — so every implementation can be
-swapped or mocked freely.
+only on `tara.interfaces.task_classifier.TaskClassifier`, and
+`LexicalRetriever` consumes a `RetrievalPlan` matching the shape
+`tara.interfaces.router.Router` already produces — so every
+implementation can be swapped or mocked freely. **One deliberate
+exception:** a shared `tara.interfaces.retriever.Retriever` ABC is not
+yet introduced, since only one retriever implementation exists so far;
+per this project's own "no premature abstraction" principle
+(`PROJECT_SPEC.md` §14), that interface is deferred to Dense Retrieval,
+once a second implementation actually needs to be substituted against it.
 
 ## Implementation status
 
@@ -271,18 +279,74 @@ or a custom planner without touching this class.
 | "Where is JWT implemented?" | `HYBRID` | lexical + dense | `parallel=True`, `top_k=15`, `rerank=True` |
 | "Refactor RepositoryParser" | `FULL_PIPELINE` | lexical + dense + graph | `rerank=True` |
 
+### Lexical Retrieval (`tara.retrieval`) — implemented
+
+The first concrete retriever: exact and BM25-ranked keyword search over
+a `RepositoryContext`, satisfying `LEXICAL_ONLY` and the lexical
+component of every hybrid strategy. No LLM, no network call, no
+external ranking-library dependency — BM25 is implemented in-house for
+full reproducibility.
+
+- `tara.retrieval.bm25_index.BM25Index` — a generic, corpus-agnostic
+  Okapi BM25 engine over `(document_id, tokens)` pairs, with no
+  knowledge of symbols, files, or `RepositoryContext`. Inverted-index
+  scoring means a query only visits documents sharing at least one
+  token with it — `O(Σ |docs per query term|)`, not `O(N)` in corpus
+  size — verified against a 5,000-document synthetic corpus.
+- `tara.retrieval.ranking.RankingEngine` — equally generic: sorts,
+  deterministically tie-breaks, and top-k-truncates raw scores,
+  normalizing over the *full* candidate pool before truncation (not
+  only the survivors), so a lone top result's normalized score reflects
+  how much better it actually was, not an artifact of truncation order.
+- `tara.retrieval.utils.tokenize_for_search` — reuses
+  `tara.classification.heuristics.tokenize`/`is_stop_word` directly
+  (the same tokenizer behind `TaskClassification.extracted_keywords`),
+  closing a query/corpus tokenizer-mismatch risk by construction rather
+  than by convention.
+- `tara.retrieval.lexical_retriever.LexicalRetriever` — the
+  domain-specific layer. Three separate BM25 indices (name, docstring,
+  source), combined by configurable weight
+  (`TaraSettings.lexical_name_weight` >
+  `lexical_docstring_weight` > `lexical_source_weight`), so an exact
+  name hit outranks the same term merely appearing in a function body —
+  and gives `SearchResult.matched_field` real meaning, not a guess.
+  Partial sub-identifier search (`"parse"` finding `"parse_repository"`)
+  works via symmetric expansion of `_`/`.`/`/`/`\`-delimited compound
+  tokens on both the corpus and the query side, while an exact compound
+  query still ranks the same document higher (three matching terms
+  instead of one). **Known limitation:** this expansion does not split
+  on camelCase boundaries, so partial search is markedly weaker for
+  camelCase-heavy languages (JS/TS/Java) than snake_case-heavy ones —
+  see `ROADMAP.md` M5 Risks.
+- Exact lookups (`find_symbol`, `find_function`, `find_class`,
+  `find_method`, `find_file`, `find_path`) go through
+  `RepositoryContext.symbol_index` directly — O(1) average case, no
+  BM25 involved, since an exact name either matches or it doesn't.
+- Per-context BM25 indices are built lazily and cached by a content
+  signature (`root_path`, `commit_sha`, `symbol_count`) — not Python
+  object identity, which would be vulnerable to a garbage-collected
+  object's address being reused for an unrelated repository.
+
+**Deliberately deferred:** the shared `Retriever` interface
+`PROJECT_SPEC.md` §19 describes is not yet introduced (see the
+Dependency Inversion note above) — `LexicalRetriever.retrieve(query,
+plan, context) -> RetrievedContext` already matches the shape it will
+formalize.
+
 ### Planned next
 
-1. **Retrievers** (`tara.retrieval`) — the concrete implementations a
-   `RetrievalPlan` is executed against: `LexicalRetriever` (BM25),
-   `GraphRetriever` (traverses `RepositoryContext.graph`),
-   `DenseRetriever` (embeddings already in `RepositoryContext.embeddings`
-   + FAISS), `APIRetriever`, `StaticAnalyzer`.
-2. **Context Fusion** (`tara.fusion`) — merges retriever outputs into a
+1. **Dense Retrieval** (`tara.retrieval`) — FAISS-backed nearest-neighbor
+   search over `RepositoryContext.embeddings`, reusing the same
+   `Embedder` instance for query and document embeddings. Introduces
+   the shared `Retriever` ABC now that a second implementation exists.
+2. **Graph Retrieval** (`tara.retrieval`) — traversal of
+   `RepositoryContext.graph`, honoring `RetrievalPlan.graph_depth` /
+   `expand_neighbors`.
+3. **Context Fusion** (`tara.fusion`) — merges retriever outputs into a
    single ranked context window under a token budget.
-3. **Code Generator** (`tara.generation`) — prompts the configured LLM
+4. **Code Generator** (`tara.generation`) — prompts the configured LLM
    with the fused context and returns generated code.
-4. **API** (`tara.api`) — a FastAPI service exposing the end-to-end
+5. **API** (`tara.api`) — a FastAPI service exposing the end-to-end
    pipeline.
 
 ## Getting started

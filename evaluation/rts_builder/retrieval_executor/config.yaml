@@ -1,0 +1,53 @@
+# Retrieval Executor -- frozen protocols (Reviewer #2, Minor Revision)
+#
+# This file is a human-readable, versioned record of two protocols this
+# subsystem's code must conform to. It is NOT read at runtime -- tunable
+# behavior lives in `RetrievalExecutorSettings` (see `config.py` /
+# `.env.example`); this file documents fixed *contracts*, not knobs.
+# `tests/rts_builder/retrieval_executor/test_latency_protocol.py` asserts
+# this file's latency_protocol section stays textually in sync with
+# `latency_protocol.py`'s constants, so the two cannot silently drift.
+
+hybrid_score_normalization:
+  method: min_max
+  description: >
+    Each of Lexical, Dense, and Graph retrieval's own retrieved_files
+    scores is independently min-max normalized to [0, 1] before
+    combination. A strategy with a single retrieved file, or with every
+    retrieved file tied at the same score, normalizes every one of
+    those scores to 1.0 (not 0/0) -- see normalize_scores in
+    tara.retrieval.utils, reused unmodified.
+  formula: "Hybrid = alpha * L_prime + beta * D_prime + gamma * G_prime"
+  constraint: "alpha + beta + gamma == 1.0"
+  default_weights:
+    alpha_lexical: 0.3333333333333333
+    beta_dense: 0.3333333333333333
+    gamma_graph: 0.3333333333333333
+  settings_fields:
+    alpha_lexical: hybrid_lexical_weight
+    beta_dense: hybrid_dense_weight
+    gamma_graph: hybrid_graph_weight
+  implementation: hybrid_retrieval.py:HybridRetriever.combine
+
+latency_protocol:
+  starts: "immediately before retrieve() is invoked"
+  ends: "immediately after ranked results are returned"
+  include:
+    - embedding_generation
+    - vector_search
+    - graph_traversal
+    - score_computation
+  exclude:
+    - repository_loading
+    - index_construction
+    - model_download
+  implementation: latency_protocol.py
+  notes: >
+    In this milestone's current (uncached) architecture, index
+    construction (BM25Index.build, VectorIndex.build, the graph
+    -retrieval file-adjacency map) executes inside the same retrieve()
+    call as the included work. Excluding it from retrieval_latency_ms
+    is a measurement-boundary decision (see README.md's "Design
+    Rationale: Revision 2"), implemented via discontiguous timed spans
+    (common.LatencyAccumulator), not an architecture change: no public
+    method signature, return type, or cross-class data flow changed.

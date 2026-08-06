@@ -12,14 +12,14 @@
 | M2 | Repository Context | **[Complete]** | 37 |
 | M3 | Task Classifier | **[Complete]** | 144 |
 | M4 | Adaptive Router | **[Complete]** | 51 |
-| M5 | Lexical Retrieval | **[Planned]** | — |
+| M5 | Lexical Retrieval | **[Complete]** | 110 |
 | M6 | Dense Retrieval | **[Planned]** | — |
 | M7 | Graph Retrieval | **[Planned]** | — |
 | M8 | Fusion | **[Planned]** | — |
 | M9 | Generation | **[Planned]** | — |
 | M10 | Evaluation | **[Planned]** | — |
 
-M1–M4 total: **240 passing tests**, verified by direct test collection at the time of writing this document; all four stages are deterministic, LLM-free, and meet their stated latency budgets under a dedicated timing assertion (classification < 10 ms, routing < 2 ms).
+M1–M5 total: **350 passing tests**, verified by direct test collection at the time of writing this document; all five stages are deterministic, LLM-free, and meet their stated latency budgets under a dedicated timing assertion where one is specified (classification < 10 ms, routing < 2 ms; M5 has no stated latency budget yet — see M5 Risks).
 
 ---
 
@@ -183,35 +183,43 @@ All 7 routing strategies reachable; all 5 worked examples correct end-to-end aga
 ## Milestone 5 — Lexical Retrieval
 
 ### Objectives
-Implement the first concrete retriever: exact/keyword search over repository source text, satisfying the `LEXICAL_ONLY` and every `*_PLUS_LEXICAL`/`HYBRID`/`FULL_PIPELINE`-adjacent strategy's lexical component. Establish the shared retriever interface and the common `RetrievedContext`/`ContextChunk` output contract every later retriever (M6, M7) must also produce.
+Implement the first concrete retriever: exact/keyword search over repository source text, satisfying the `LEXICAL_ONLY` strategy and the lexical component of every `*_PLUS_LEXICAL`/`HYBRID`/`FULL_PIPELINE`-adjacent strategy.
 
-### Files *(proposed, not yet created)*
-- `src/tara/interfaces/retriever.py` *(new — shared across M5–M7)*
-- `src/tara/retrieval/__init__.py`, `models.py`, `lexical_index.py`, `lexical_retriever.py`
+**Deviation from the original plan, made deliberately:** the shared `Retriever` ABC (`src/tara/interfaces/retriever.py`) originally scoped for this milestone was **deferred to M6**, on the grounds that introducing an interface with only one concrete implementation would be the exact premature abstraction `PROJECT_SPEC.md` §14's design principles warn against — an interface is introduced when a second implementation exists to justify it. `LexicalRetriever.retrieve(query, plan, context) -> RetrievedContext` already matches the shape that interface will formalize; M6 (Dense Retrieval) is where the ABC gets introduced, once there are genuinely two implementations to substitute between.
 
-### Classes *(proposed)*
-- `Retriever` (ABC, shared contract: `retrieve(query, plan, context) -> RetrievedContext`)
-- `RetrievedContext`, `ContextChunk` (Pydantic, shared — introduced here, reused unchanged by M6/M7)
-- `LexicalIndex` (BM25 or equivalent inverted-index structure)
-- `LexicalRetriever`
+### Files *(as built)*
+- `src/tara/retrieval/__init__.py`, `models.py`, `bm25_index.py`, `utils.py`, `ranking.py`, `lexical_retriever.py`
+- `src/tara/core/config.py` (extended: `bm25_k1`, `bm25_b`, `lexical_name_weight`, `lexical_docstring_weight`, `lexical_source_weight`)
 
-### Functions *(proposed)*
-- `LexicalIndex.build(parsed_repository | repository_context)`, `.search(query, top_k)`
-- `LexicalRetriever.retrieve()`
+### Classes *(as built)*
+- `MatchedField` (enum), `RetrievalScore`, `SearchResult`, `RetrievedChunk`, `RetrievedContext` (Pydantic)
+- `BM25Index` — a generic, corpus-agnostic Okapi BM25 engine, implemented in-house (no external ranking library dependency, resolving the library/license-**TBD** risk originally flagged here) operating on `(document_id, tokens)` pairs with no knowledge of `RepositoryContext`
+- `RankingEngine` — generic sort/normalize/top-k, equally corpus-agnostic
+- `LexicalRetriever` — the domain-specific layer wiring `BM25Index` + `RankingEngine` + `tara.retrieval.utils` into TARA's actual search surface
 
-### Tests *(proposed)*
-`tests/retrieval/test_lexical_index.py`, `test_lexical_retriever.py` — deterministic, against small hand-constructed `ParsedRepository`/`RepositoryContext` fixtures (no real corpus required for unit correctness); exact-match ranking correctness; behavior on `extracted_keywords`/`detected_symbols` preferential matching; empty-index and no-match edge cases.
+### Functions *(as built)*
+- `BM25Index.build()`, `.score()`, `.document_length()`, `.k1`/`.b` properties
+- `RankingEngine.rank()`
+- `tokenize_for_search()`, `normalize_scores()`, `read_file_bytes()`, `decode_byte_span()` (`utils.py`)
+- `LexicalRetriever.retrieve()`, `.keyword_search()`, `.find_symbol()`, `.find_function()`, `.find_class()`, `.find_method()`, `.find_file()`, `.find_path()`, plus internal `_ensure_indexed()`, `_build_corpus()`, `_combine_field_scores()`, `_determine_matched_field()`, `_to_chunk()`
+- `_expand_identifier_tokens()` — module-level helper resolving the tokenizer-mismatch risk originally flagged here by reusing `tara.classification.heuristics.tokenize`/`is_stop_word` directly, plus symmetric corpus/query expansion of `_`/`.`/`/`/`\`-delimited compound identifiers so a bare sub-identifier query (`"parse"`) can find a compound corpus token (`"parse_repository"`) while an exact compound query still ranks the same document higher
+
+### Tests *(as built)*
+`tests/retrieval/` — **110 tests**: `test_bm25.py` (56 — `BM25Index` construction/parameter validation including NaN/infinite `k1`/`b`, `build()` correctness, `score()` correctness including IDF positivity and length-normalization behavior, a 5,000-document corpus verifying inverted-index sparsity at scale; `RankingEngine` top-k/deterministic tie-breaking/full-pool normalization; `normalize_scores()`), `test_lexical.py` (26 — exact/partial/multi-keyword/unknown/empty-query keyword search, per-field weighting and `matched_field` attribution including a docstring-only-match case, top-k and ranking-order correctness, empty repository, a 300-function generated "large repository" fixture, `retrieve()` end-to-end against a real `RetrievalPlan`, index caching and cache invalidation across different contexts), `test_symbol_search.py` (28 — `find_symbol`/`find_function`/`find_class`/`find_method` type-filtering correctness *including the negative "does NOT match a different type" cases*, `find_file`/`find_path` basename-vs-full-path disambiguation against a duplicate-basename-in-different-directories fixture, a duplicate-name-in-different-files fixture, empty repository). All fixtures build real `RepositoryContext` objects through the actual M1→M2 pipeline, not synthetic stand-ins.
 
 ### Expected Outputs
-A `RetrievedContext` populated with `ContextChunk`s tagged `retriever_kind = LEXICAL`, ranked by a lexical relevance score, respecting `RetrievalPlan.top_k`/`candidate_limit`.
+A `RetrievedContext` tagged `retriever_kind = RetrieverKind.LEXICAL`, containing `RetrievedChunk`s sorted by descending relevance (each carrying `content`, `docstring`, line span, `score`, and `matched_field`), respecting `RetrievalPlan.candidate_limit` (not `top_k` — per `RetrievalPlan`'s own field semantics, final trimming to `top_k` is Context Fusion's job, not the retriever's).
 
 ### Risks
-- Library/license choice for the BM25 implementation is unresolved (`EXPERIMENT_PLAN.md` §13 flags `rank_bm25` or equivalent as **TBD**).
-- Index-build strategy (eager at context-extraction time vs. lazy on first lexical query) is undecided; either choice has different latency/staleness trade-offs not yet profiled.
-- Tokenizer mismatch risk between the classifier's own tokenization (`tara.classification.heuristics.tokenize`) and whatever tokenization the lexical index uses internally — an inconsistency here would silently degrade retrieval quality without raising an error.
+- **Resolved from the original plan:** the BM25 library/license question (implemented in-house instead), the eager-vs-lazy index-build question (lazy, built on first query, cached per repository via a content signature — `root_path`, `commit_sha`, `symbol_count` — not Python object identity, which would be vulnerable to a garbage-collected object's address being reused), and the tokenizer-mismatch risk (closed by direct reuse of the classifier's tokenizer).
+- **New, previously undocumented limitation:** the compound-identifier expansion that enables partial search only splits on `_`/`.`/`/`/`\`, **not on camelCase capitalization boundaries** — a snake_case corpus token like `parse_repository` is correctly decomposed into `parse` + `repository`, but a camelCase token like `parseRepository` (common in JS/TS/Java source) is not. Partial sub-identifier search is therefore markedly weaker for camelCase-dominant languages than for snake_case-dominant ones. This should be either fixed (camelCase-boundary splitting) or explicitly scoped as a known cross-language limitation before any cross-language retrieval-quality comparison is drawn from `EXPERIMENT_PLAN.md`'s results.
+- Per-field weights (`lexical_name_weight=3.0`, `docstring=2.0`, `source=1.0`) are hand-chosen defaults, not empirically tuned — an instance of the "static weight adequacy" assumption named in `docs/methodology/Adaptive_Retrieval_Definition.md` §7.
+- `matched_field` attribution (which field "drove" a match) is a simple max-of-weighted-contributions heuristic, not independently validated against human judgment of which field actually mattered to a reader.
+- No end-to-end automated test yet connects `AdaptiveRouter`'s actual output directly to `LexicalRetriever.retrieve()` in one continuous flow — both sides of that contract are independently, thoroughly tested, but the seam between them is only exercised with manually constructed `RetrievalPlan` objects matching what the router would produce, not the router's live output. A low-risk gap, worth closing with a dedicated integration test either in M6 or in a short standalone pass.
+- No latency budget is stated or measured for this stage, unlike M3 (< 10 ms) and M4 (< 2 ms) — reasonable, since this stage does real file I/O and BM25 scoring rather than pure in-memory logic, but the absence should be a deliberate scope note, not a silent omission.
 
-### Completion Criteria
-`LexicalRetriever` implements the shared `Retriever` interface; index build and search are both unit-tested against deterministic fixtures with hand-verified expected rankings; integrates cleanly when `RetrievalPlan.retrievers` includes `LEXICAL`, with no change required to `tara.routing`.
+### Completion Criteria — **Met**, with one caveat noted above
+All keyword-search and exact-lookup functional requirements implemented and tested (110/110 passing); `LexicalRetriever.retrieve()` matches the `(query, plan, context) -> RetrievedContext` contract shape the deferred `Retriever` ABC will formalize; BM25 and ranking logic are fully corpus-agnostic and independently tested from the `RepositoryContext`-specific wiring; no external ranking-library dependency introduced; the live-router-to-retriever integration test is the one open item, explicitly not silently marked done.
 
 ---
 
