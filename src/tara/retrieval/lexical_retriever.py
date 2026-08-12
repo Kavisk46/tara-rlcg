@@ -15,8 +15,8 @@ byte-level source reading) into TARA's actual search surface:
   BM25 indices -- name, docstring, source -- combined with configurable
   per-field weights, so an exact-name match outranks a source-text
   mention of the same term.
-- `retrieve`, the entry point matching the shape every retriever will
-  share: `(query, plan, context) -> RetrievedContext`.
+- `retrieve`, the entry point satisfying `tara.interfaces.retriever.Retriever`:
+  `(query, plan, context) -> RetrievedContext`.
 
 Design rationale for three separate BM25 indices rather than one
 combined index: keeping name/docstring/source scored independently is
@@ -35,6 +35,7 @@ from tara.classification.heuristics import is_stop_word
 from tara.context.models import NodeType, RepositoryContext
 from tara.core.config import TaraSettings
 from tara.core.types import RetrieverKind
+from tara.interfaces.retriever import Retriever
 from tara.retrieval.bm25_index import BM25Index
 from tara.retrieval.models import MatchedField, RetrievalScore, RetrievedChunk, RetrievedContext, SearchResult
 from tara.retrieval.ranking import RankingEngine
@@ -92,8 +93,14 @@ def _expand_identifier_tokens(tokens: Sequence[str]) -> list[str]:
     return expanded
 
 
-class LexicalRetriever:
+class LexicalRetriever(Retriever):
     """Exact and BM25-ranked keyword search over a `RepositoryContext`.
+
+    Formally implements `tara.interfaces.retriever.Retriever`, mirroring
+    `DenseRetriever`'s declared inheritance (Dependency Inversion at the
+    pipeline level is a hard architectural constraint, per
+    `PROJECT_SPEC.md` §14.1, not something left implicit even when the
+    method signature already happens to match structurally).
 
     A single instance is safe to reuse across many queries and across
     many different `RepositoryContext` objects: the BM25 indices it

@@ -1,0 +1,53 @@
+{"query_id": "celery-001", "repository": "celery", "file": "celery/canvas.py", "grade": "TO_BE_ASSIGNED", "reason": "Signature.link_error/on_error implement error-callback attachment; _chain/chain build the chain itself."}
+{"query_id": "celery-001", "repository": "celery", "file": "celery/app/task.py", "grade": "TO_BE_ASSIGNED", "reason": "Task is what each chain link wraps; task-level exception handling interacts with chain-level propagation."}
+{"query_id": "celery-001", "repository": "celery", "file": "t/unit/tasks/test_canvas.py", "grade": "TO_BE_ASSIGNED", "reason": "Natural location for chain-error-propagation tests."}
+{"query_id": "celery-001", "repository": "celery", "file": "docs/userguide/canvas.rst", "grade": "TO_BE_ASSIGNED", "reason": "Documentation page matching the subsystem by name."}
+{"query_id": "celery-002", "repository": "celery", "file": "celery/schedules.py", "grade": "TO_BE_ASSIGNED", "reason": "crontab/crontab_parser implement crontab-style scheduling."}
+{"query_id": "celery-002", "repository": "celery", "file": "celery/beat.py", "grade": "TO_BE_ASSIGNED", "reason": "Scheduler/ScheduleEntry evaluate a crontab schedule at runtime to decide when to dispatch."}
+{"query_id": "celery-002", "repository": "celery", "file": "t/unit/app/test_schedules.py", "grade": "TO_BE_ASSIGNED", "reason": "Regression test file matching the subsystem by name."}
+{"query_id": "celery-002", "repository": "celery", "file": "docs/userguide/periodic-tasks.rst", "grade": "TO_BE_ASSIGNED", "reason": "Documentation page matching the subsystem by name."}
+{"query_id": "celery-003", "repository": "celery", "file": "celery/backends/base.py", "grade": "TO_BE_ASSIGNED", "reason": "Backend.store_result/mark_as_done are the confirmed state-reporting methods."}
+{"query_id": "celery-003", "repository": "celery", "file": "celery/result.py", "grade": "TO_BE_ASSIGNED", "reason": "AsyncResult is how a caller observes the state a backend reports."}
+{"query_id": "celery-004", "repository": "celery", "file": "celery/worker/autoscale.py", "grade": "TO_BE_ASSIGNED", "reason": "Own docstring confirms it implements the pool grow/shrink thread this query describes."}
+{"query_id": "celery-004", "repository": "celery", "file": "celery/worker/worker.py", "grade": "TO_BE_ASSIGNED", "reason": "WorkController is the top-level worker object that owns/configures the autoscale thread."}
+{"query_id": "celery-005", "repository": "celery", "file": "celery/backends/base.py", "grade": "TO_BE_ASSIGNED", "reason": "Backend/BaseKeyValueStoreBackend are the extension hierarchy a new backend would subclass."}
+{"query_id": "celery-005", "repository": "celery", "file": "celery/app/backends.py", "grade": "TO_BE_ASSIGNED", "reason": "by_name/by_url and BACKEND_ALIASES -- a new backend needs an alias entry here to be selectable by short name."}
+{"query_id": "celery-006", "repository": "celery", "file": "celery/canvas.py", "grade": "TO_BE_ASSIGNED", "reason": "Signature and the existing chain/group/chord/map primitives are what a new primitive would join."}
+{"query_id": "celery-006", "repository": "celery", "file": "t/unit/tasks/test_canvas.py", "grade": "TO_BE_ASSIGNED", "reason": "Would need new tests for a new primitive."}
+{"query_id": "celery-006", "repository": "celery", "file": "docs/userguide/canvas.rst", "grade": "TO_BE_ASSIGNED", "reason": "Documentation page matching the subsystem by name."}
+{"query_id": "celery-007", "repository": "celery", "file": "celery/security/certificate.py", "grade": "TO_BE_ASSIGNED", "reason": "CertStore (base) and FSCertStore (only built-in subclass) are the extension point."}
+{"query_id": "celery-007", "repository": "celery", "file": "t/unit/security/test_certificate.py", "grade": "TO_BE_ASSIGNED", "reason": "Regression test file matching the subsystem by name."}
+{"query_id": "celery-007", "repository": "celery", "file": "docs/userguide/security.rst", "grade": "TO_BE_ASSIGNED", "reason": "Documentation page matching the subsystem by name."}
+{"query_id": "celery-008", "repository": "celery", "file": "celery/canvas.py", "grade": "TO_BE_ASSIGNED", "reason": "StampingVisitor's docstring and on_group_start/on_group_end confirm the existing hook mechanism."}
+{"query_id": "celery-008", "repository": "celery", "file": "examples/stamping/visitors.py", "grade": "TO_BE_ASSIGNED", "reason": "Dedicated example demonstrating StampingVisitor usage."}
+{"query_id": "celery-008", "repository": "celery", "file": "t/unit/tasks/test_stamping.py", "grade": "TO_BE_ASSIGNED", "reason": "Regression test file matching the subsystem by name."}
+{"query_id": "celery-008", "repository": "celery", "file": "docs/userguide/canvas.rst", "grade": "TO_BE_ASSIGNED", "reason": "Plausibly discusses stamping as part of broader canvas documentation; not confirmed."}
+{"query_id": "celery-009", "repository": "celery", "file": "celery/bootsteps.py", "grade": "TO_BE_ASSIGNED", "reason": "Blueprint/Step/StartStopStep are the generic step/blueprint framework."}
+{"query_id": "celery-009", "repository": "celery", "file": "celery/worker/components.py", "grade": "TO_BE_ASSIGNED", "reason": "Timer/Hub/Pool/Beat/StateDB/Consumer are the six concrete bootstep subclasses assembling the worker's startup sequence."}
+{"query_id": "celery-009", "repository": "celery", "file": "celery/worker/worker.py", "grade": "TO_BE_ASSIGNED", "reason": "WorkController assembles these steps into a running Blueprint."}
+{"query_id": "celery-010", "repository": "celery", "file": "celery/canvas.py", "grade": "TO_BE_ASSIGNED", "reason": "_chain/chain within the 2,443-line file are the confirmed refactor target."}
+{"query_id": "celery-011", "repository": "celery", "file": "celery/backends/base.py", "grade": "TO_BE_ASSIGNED", "reason": "Backend is the shared base every concrete backend subclasses."}
+{"query_id": "celery-011", "repository": "celery", "file": "celery/exceptions.py", "grade": "TO_BE_ASSIGNED", "reason": "BackendError/BackendGetMetaError/BackendStoreError are the exception family a consistency refactor would standardize."}
+{"query_id": "celery-012", "repository": "celery", "file": "celery/schedules.py", "grade": "TO_BE_ASSIGNED", "reason": "schedule/crontab/solar are the implementation under test."}
+{"query_id": "celery-012", "repository": "celery", "file": "t/unit/app/test_schedules.py", "grade": "TO_BE_ASSIGNED", "reason": "The file this new test coverage would be added to."}
+{"query_id": "celery-013", "repository": "celery", "file": "t/integration/test_canvas.py", "grade": "TO_BE_ASSIGNED", "reason": "Contains 10+ tests decorated with @flaky (Phase 11 audit finding), the highest concentration found."}
+{"query_id": "celery-013", "repository": "celery", "file": "t/integration/conftest.py", "grade": "TO_BE_ASSIGNED", "reason": "Defines the actual flaky marker (reruns=5, reruns_delay=1, cause=is_retryable_exception), resolved during Phase 11 audit."}
+{"query_id": "celery-013", "repository": "celery", "file": "t/integration/test_worker.py", "grade": "TO_BE_ASSIGNED", "reason": "Confirmed at least one @flaky usage (line 74)."}
+{"query_id": "celery-013", "repository": "celery", "file": "pyproject.toml", "grade": "TO_BE_ASSIGNED", "reason": "Declares the 'flaky' marker name for pytest's --strict-markers; the actual retry behavior is defined in t/integration/conftest.py, not here."}
+{"query_id": "celery-014", "repository": "celery", "file": "celery/app/task.py", "grade": "TO_BE_ASSIGNED", "reason": "Task.retry is the implementation under test."}
+{"query_id": "celery-014", "repository": "celery", "file": "celery/exceptions.py", "grade": "TO_BE_ASSIGNED", "reason": "Retry(TaskPredicate) is the exception raised to trigger a retry."}
+{"query_id": "celery-014", "repository": "celery", "file": "t/unit/tasks/test_tasks.py", "grade": "TO_BE_ASSIGNED", "reason": "Natural location for task-retry-policy tests."}
+{"query_id": "celery-015", "repository": "celery", "file": "docs/userguide/canvas.rst", "grade": "TO_BE_ASSIGNED", "reason": "Most directly-named documentation target for canvas/stamping behavior."}
+{"query_id": "celery-015", "repository": "celery", "file": "celery/canvas.py", "grade": "TO_BE_ASSIGNED", "reason": "StampingVisitor's own docstring is the authoritative source this documentation task would draw from."}
+{"query_id": "celery-015", "repository": "celery", "file": "examples/stamping/visitors.py", "grade": "TO_BE_ASSIGNED", "reason": "A complete, dedicated example specifically demonstrating this feature."}
+{"query_id": "celery-016", "repository": "celery", "file": "docs/userguide/extending.rst", "grade": "TO_BE_ASSIGNED", "reason": "Documentation page matching the general subject of extending Celery."}
+{"query_id": "celery-016", "repository": "celery", "file": "celery/backends/base.py", "grade": "TO_BE_ASSIGNED", "reason": "The Backend extension hierarchy this documentation would need to accurately describe."}
+{"query_id": "celery-017", "repository": "celery", "file": "celery/app/autoretry.py", "grade": "TO_BE_ASSIGNED", "reason": "add_autoretry_behaviour, directly read, precisely implements this exact feature (autoretry_for/retry_backoff/retry_jitter)."}
+{"query_id": "celery-017", "repository": "celery", "file": "celery/app/task.py", "grade": "TO_BE_ASSIGNED", "reason": "Task.retry is the lower-level mechanism add_autoretry_behaviour builds on top of."}
+{"query_id": "celery-017", "repository": "celery", "file": "t/unit/tasks/test_tasks.py", "grade": "TO_BE_ASSIGNED", "reason": "Plausible location for retry-related tests; not confirmed."}
+{"query_id": "celery-017", "repository": "celery", "file": "docs/userguide/tasks.rst", "grade": "TO_BE_ASSIGNED", "reason": "Documentation page matching the subject by name."}
+{"query_id": "celery-018", "repository": "celery", "file": "celery/canvas.py", "grade": "TO_BE_ASSIGNED", "reason": "group and _chord are exactly 'a group plus a callback run after all members complete'."}
+{"query_id": "celery-018", "repository": "celery", "file": "t/unit/tasks/test_chord.py", "grade": "TO_BE_ASSIGNED", "reason": "Regression test file matching the chord subsystem by name."}
+{"query_id": "celery-018", "repository": "celery", "file": "docs/userguide/canvas.rst", "grade": "TO_BE_ASSIGNED", "reason": "The canvas primitives, including chord, are documented here."}
+{"query_id": "celery-019", "repository": "celery", "file": "celery/app/backends.py", "grade": "TO_BE_ASSIGNED", "reason": "by_name/by_url and BACKEND_ALIASES, directly read, implement exactly this logic."}
+{"query_id": "celery-020", "repository": "celery", "file": "celery/schedules.py", "grade": "TO_BE_ASSIGNED", "reason": "crontab_parser implements exactly this parsing logic."}

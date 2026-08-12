@@ -1,0 +1,38 @@
+{
+  "repository": "requests",
+  "schema_version": "1.0",
+  "queries": 20,
+  "avg_candidate_files": 2.35,
+  "weak_queries": 0,
+  "directory_candidates": 0,
+  "validation_errors": 0,
+  "manual_additions": 0,
+  "manual_removals": 0,
+  "commit_sha": "1f6589ec3a1ee910f9a65cc3ceac60b26677bc0e",
+  "speculative_queries": 2,
+  "speculative_query_ids": ["requests-008", "requests-013"],
+  "min_candidate_files": 1,
+  "max_candidate_files": 4,
+  "total_candidate_files": 47,
+  "category_distribution": {
+    "bug_fix": 4,
+    "feature_implementation": 4,
+    "refactoring": 3,
+    "testing": 3,
+    "documentation": 2,
+    "api_usage": 2,
+    "code_search": 2
+  },
+  "difficulty_distribution": {
+    "easy": 5,
+    "medium": 12,
+    "hard": 3
+  },
+  "src_package_files_total": 19,
+  "src_package_files_referenced": 9,
+  "src_package_coverage_fraction": 0.4737,
+  "grades_assigned": 0,
+  "grades_pending": 47,
+  "generated_by": "AI search assistant (this session) -- no human annotation has occurred yet",
+  "pipeline_stage": "draft, pre-human-review"
+}

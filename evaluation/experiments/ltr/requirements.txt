@@ -1,0 +1,20 @@
+# Additional dependencies for the TARA RTS LTR experiment framework,
+# on top of the base `tara` package (`pip install -e .` from the repo
+# root -- see README.md's "Setup" section for why that is required
+# first: it provides pydantic/networkx/tree-sitter/gitpython/etc.,
+# which feature_pipeline.RetrievalFeatureProvider needs to invoke the
+# frozen Repository Loader / Parser / Feature Extraction / Retrieval
+# Executor subsystems).
+#
+# matplotlib and pyyaml are already pulled in transitively by the base
+# `tara` package (matplotlib is a direct dependency; pyyaml is in its
+# `dev` extra) -- pinned here too so this file is a complete,
+# self-contained list of everything this specific framework imports,
+# not just what it happens to be missing in a given environment.
+
+lightgbm>=4.5,<5
+shap>=0.45,<1
+matplotlib>=3.8
+pyyaml>=6.0
+numpy>=1.26
+pytest>=8.2

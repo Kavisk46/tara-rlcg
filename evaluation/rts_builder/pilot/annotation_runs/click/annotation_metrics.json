@@ -1,0 +1,38 @@
+{
+  "repository": "click",
+  "schema_version": "1.0",
+  "queries": 20,
+  "avg_candidate_files": 2.7,
+  "weak_queries": 0,
+  "directory_candidates": 0,
+  "validation_errors": 0,
+  "manual_additions": 0,
+  "manual_removals": 0,
+  "commit_sha": "00e592cea702e0b2caa0dee42489fdb1c22cd845",
+  "speculative_queries": 1,
+  "speculative_query_ids": ["click-013"],
+  "min_candidate_files": 1,
+  "max_candidate_files": 4,
+  "total_candidate_files": 54,
+  "category_distribution": {
+    "bug_fix": 4,
+    "feature_implementation": 4,
+    "refactoring": 3,
+    "testing": 3,
+    "documentation": 2,
+    "api_usage": 2,
+    "code_search": 2
+  },
+  "difficulty_distribution": {
+    "easy": 5,
+    "medium": 13,
+    "hard": 2
+  },
+  "src_package_files_total": 17,
+  "src_package_files_referenced": 12,
+  "src_package_coverage_fraction": 0.7059,
+  "grades_assigned": 0,
+  "grades_pending": 54,
+  "generated_by": "AI search assistant (this session) -- no human annotation has occurred yet",
+  "pipeline_stage": "draft, pre-human-review"
+}

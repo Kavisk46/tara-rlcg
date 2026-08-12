@@ -1,0 +1,15 @@
+# Generated artifacts -- reproducible from source + the frozen RTS
+# Dataset v1.0, so not checked in. The one exception is
+# outputs/reports/phase1_dataset_inspection.md, explicitly kept (see
+# the negative pattern below) as committed evidence of this session's
+# real dataset-inspection run -- see README.md's "What was actually run".
+__pycache__/
+*.pyc
+outputs/models/
+outputs/figures/
+outputs/retrieval_cache/
+outputs/*.npz
+outputs/*.meta.json
+outputs/encoders.json
+outputs/reports/*
+!outputs/reports/phase1_dataset_inspection.md

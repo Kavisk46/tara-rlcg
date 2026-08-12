@@ -36,6 +36,8 @@ dependencies = [
     "gitpython>=3.1",
     "transformers>=4.42",
     "filelock>=3.13",
+    "pyarrow>=14.0",
+    "matplotlib>=3.8",
 ]
 
 [project.optional-dependencies]

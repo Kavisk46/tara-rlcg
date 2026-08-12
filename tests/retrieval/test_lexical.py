@@ -12,6 +12,7 @@ import pytest
 from tara.context.models import NodeType, RepositoryContext
 from tara.core.exceptions import RetrievalError
 from tara.core.types import RetrieverKind
+from tara.interfaces.retriever import Retriever
 from tara.retrieval.lexical_retriever import LexicalRetriever
 from tara.retrieval.models import MatchedField
 from tara.retrieval.ranking import RankingEngine
@@ -35,6 +36,15 @@ def _make_plan(top_k: int = 10, candidate_limit: int = 10) -> RetrievalPlan:
 @pytest.fixture
 def retriever() -> LexicalRetriever:
     return LexicalRetriever(RankingEngine())
+
+
+# ============================================================================
+# Interface conformance
+# ============================================================================
+
+
+def test_lexical_retriever_implements_retriever_interface(retriever: LexicalRetriever) -> None:
+    assert isinstance(retriever, Retriever)
 
 
 # ============================================================================

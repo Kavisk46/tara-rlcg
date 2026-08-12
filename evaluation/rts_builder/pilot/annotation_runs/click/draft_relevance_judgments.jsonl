@@ -1,0 +1,54 @@
+{"query_id": "click-001", "repository": "click", "file": "src/click/shell_completion.py", "grade": "TO_BE_ASSIGNED", "reason": "ShellComplete's source_vars/source/complete methods generate completion suggestions."}
+{"query_id": "click-001", "repository": "click", "file": "examples/complex/complex/cli.py", "grade": "TO_BE_ASSIGNED", "reason": "ComplexCLI demonstrates the exact dynamically-generated-subcommands pattern the query describes."}
+{"query_id": "click-001", "repository": "click", "file": "src/click/core.py", "grade": "TO_BE_ASSIGNED", "reason": "Group defines list_commands/get_command as the overridable dynamic-resolution hooks."}
+{"query_id": "click-001", "repository": "click", "file": "tests/test_shell_completion.py", "grade": "TO_BE_ASSIGNED", "reason": "Natural location for a dynamic-subcommand completion test; not confirmed to already cover this."}
+{"query_id": "click-002", "repository": "click", "file": "src/click/core.py", "grade": "TO_BE_ASSIGNED", "reason": "Option.get_help_record (line 3331, overriding Parameter's base at 2811) generates the default-inclusive help record."}
+{"query_id": "click-002", "repository": "click", "file": "src/click/formatting.py", "grade": "TO_BE_ASSIGNED", "reason": "HelpFormatter renders the final help text Option's data is fed into."}
+{"query_id": "click-002", "repository": "click", "file": "docs/options.md", "grade": "TO_BE_ASSIGNED", "reason": "Confirmed 'Setting a Default' section exists."}
+{"query_id": "click-003", "repository": "click", "file": "src/click/types.py", "grade": "TO_BE_ASSIGNED", "reason": "ParamType.convert() (line 168) and fail() (line 204) are the confirmed base methods a custom type subclasses."}
+{"query_id": "click-003", "repository": "click", "file": "src/click/exceptions.py", "grade": "TO_BE_ASSIGNED", "reason": "BadParameter(UsageError) is the confirmed exception a validation failure raises."}
+{"query_id": "click-003", "repository": "click", "file": "tests/test_types.py", "grade": "TO_BE_ASSIGNED", "reason": "Natural location for parameter-type validation tests."}
+{"query_id": "click-003", "repository": "click", "file": "docs/parameter-types.md", "grade": "TO_BE_ASSIGNED", "reason": "Documentation page matching the subject by name."}
+{"query_id": "click-004", "repository": "click", "file": "src/click/core.py", "grade": "TO_BE_ASSIGNED", "reason": "Context.parent implements the confirmed parent-chain mechanism."}
+{"query_id": "click-004", "repository": "click", "file": "src/click/decorators.py", "grade": "TO_BE_ASSIGNED", "reason": "pass_context/pass_obj/make_pass_decorator/pass_meta_key are the documented context-access mechanisms."}
+{"query_id": "click-004", "repository": "click", "file": "tests/test_context.py", "grade": "TO_BE_ASSIGNED", "reason": "Natural location for context-inheritance tests."}
+{"query_id": "click-005", "repository": "click", "file": "src/click/shell_completion.py", "grade": "TO_BE_ASSIGNED", "reason": "ShellComplete and its four existing subclasses are the template for a new shell target."}
+{"query_id": "click-005", "repository": "click", "file": "tests/test_shell_completion.py", "grade": "TO_BE_ASSIGNED", "reason": "Would need new tests for a new shell target."}
+{"query_id": "click-005", "repository": "click", "file": "docs/shell-completion.md", "grade": "TO_BE_ASSIGNED", "reason": "Documentation page matching the subsystem by name."}
+{"query_id": "click-006", "repository": "click", "file": "src/click/types.py", "grade": "TO_BE_ASSIGNED", "reason": "ParamType and its 9 confirmed built-in subclasses are the extension point and reference pattern."}
+{"query_id": "click-006", "repository": "click", "file": "tests/test_types.py", "grade": "TO_BE_ASSIGNED", "reason": "Would need new tests for a new built-in type."}
+{"query_id": "click-006", "repository": "click", "file": "docs/parameter-types.md", "grade": "TO_BE_ASSIGNED", "reason": "Documentation page matching the subject by name."}
+{"query_id": "click-007", "repository": "click", "file": "src/click/formatting.py", "grade": "TO_BE_ASSIGNED", "reason": "HelpFormatter is the confirmed help-text rendering class this feature would extend."}
+{"query_id": "click-007", "repository": "click", "file": "src/click/core.py", "grade": "TO_BE_ASSIGNED", "reason": "Option/Command would need new attributes to associate an option with a named group."}
+{"query_id": "click-007", "repository": "click", "file": "docs/contrib.md", "grade": "TO_BE_ASSIGNED", "reason": "Directly confirms option grouping is not native (lists Cloup as a third-party package adding it)."}
+{"query_id": "click-008", "repository": "click", "file": "src/click/core.py", "grade": "TO_BE_ASSIGNED", "reason": "Group.get_command/list_commands is where alias-lookup logic would be added."}
+{"query_id": "click-008", "repository": "click", "file": "docs/contrib.md", "grade": "TO_BE_ASSIGNED", "reason": "Directly confirms command aliasing is not native (lists Cloup as adding it)."}
+{"query_id": "click-008", "repository": "click", "file": "examples/aliases/aliases.py", "grade": "TO_BE_ASSIGNED", "reason": "A complete, working, manual (non-built-in) implementation of exactly this feature, directly read."}
+{"query_id": "click-009", "repository": "click", "file": "src/click/decorators.py", "grade": "TO_BE_ASSIGNED", "reason": "command() contains the confirmed cmd_name derivation and suffix-stripping logic (line 242)."}
+{"query_id": "click-010", "repository": "click", "file": "src/click/formatting.py", "grade": "TO_BE_ASSIGNED", "reason": "HelpFormatter is the confirmed help-rendering class targeted for simplification."}
+{"query_id": "click-010", "repository": "click", "file": "src/click/core.py", "grade": "TO_BE_ASSIGNED", "reason": "Group/CommandCollection's help-generation methods recurse for nested groups."}
+{"query_id": "click-011", "repository": "click", "file": "src/click/shell_completion.py", "grade": "TO_BE_ASSIGNED", "reason": "Confirmed at least one of the four ShellComplete subclasses overrides source() independently."}
+{"query_id": "click-011", "repository": "click", "file": "tests/test_shell_completion.py", "grade": "TO_BE_ASSIGNED", "reason": "Must keep passing after any refactor."}
+{"query_id": "click-012", "repository": "click", "file": "src/click/shell_completion.py", "grade": "TO_BE_ASSIGNED", "reason": "The implementation under test for a new shell-completion edge case."}
+{"query_id": "click-012", "repository": "click", "file": "tests/test_shell_completion.py", "grade": "TO_BE_ASSIGNED", "reason": "The file this new test coverage would be added to."}
+{"query_id": "click-013", "repository": "click", "file": "src/click/_winconsole.py", "grade": "TO_BE_ASSIGNED", "reason": "Windows-console-specific echo/prompt patching, confirmed platform-specific."}
+{"query_id": "click-013", "repository": "click", "file": "src/click/_compat.py", "grade": "TO_BE_ASSIGNED", "reason": "Defines CYGWIN/WIN platform-detection constants used in platform-conditional logic."}
+{"query_id": "click-013", "repository": "click", "file": "src/click/termui.py", "grade": "TO_BE_ASSIGNED", "reason": "Terminal interaction functions plausibly platform-sensitive; not individually confirmed."}
+{"query_id": "click-014", "repository": "click", "file": "src/click/types.py", "grade": "TO_BE_ASSIGNED", "reason": "ParamType is the implementation under test."}
+{"query_id": "click-014", "repository": "click", "file": "src/click/exceptions.py", "grade": "TO_BE_ASSIGNED", "reason": "BadParameter is the exception a new test would assert against."}
+{"query_id": "click-014", "repository": "click", "file": "tests/test_types.py", "grade": "TO_BE_ASSIGNED", "reason": "The file this new test coverage would be added to."}
+{"query_id": "click-015", "repository": "click", "file": "docs/upgrade-guides.md", "grade": "TO_BE_ASSIGNED", "reason": "Documentation page matching the subject by name; not confirmed to already cover the specific deprecated aliases."}
+{"query_id": "click-015", "repository": "click", "file": "src/click/utils.py", "grade": "TO_BE_ASSIGNED", "reason": "Contains the confirmed 7 deprecated aliases (read in full) removed in Click 9.0."}
+{"query_id": "click-015", "repository": "click", "file": "docs/utils.md", "grade": "TO_BE_ASSIGNED", "reason": "Plausibly also relevant given the subject matter; not confirmed."}
+{"query_id": "click-016", "repository": "click", "file": "src/click/decorators.py", "grade": "TO_BE_ASSIGNED", "reason": "Defines both version_option and custom_version_option; CHANGES.md confirms version_option's feature set is now frozen."}
+{"query_id": "click-016", "repository": "click", "file": "docs/api.md", "grade": "TO_BE_ASSIGNED", "reason": "Plausible location for API-reference documentation of both decorators; not confirmed to distinguish them."}
+{"query_id": "click-017", "repository": "click", "file": "src/click/decorators.py", "grade": "TO_BE_ASSIGNED", "reason": "pass_context/pass_obj/make_pass_decorator/pass_meta_key are the documented context-access mechanisms."}
+{"query_id": "click-017", "repository": "click", "file": "examples/complex/complex/cli.py", "grade": "TO_BE_ASSIGNED", "reason": "A complete, working example of make_pass_decorator used to share an Environment object across subcommands."}
+{"query_id": "click-017", "repository": "click", "file": "src/click/core.py", "grade": "TO_BE_ASSIGNED", "reason": "Context.parent is the underlying parent-chain attribute these decorators traverse."}
+{"query_id": "click-017", "repository": "click", "file": "docs/complex.md", "grade": "TO_BE_ASSIGNED", "reason": "Plausibly documents the same multi-command pattern examples/complex/ demonstrates; not confirmed."}
+{"query_id": "click-018", "repository": "click", "file": "src/click/types.py", "grade": "TO_BE_ASSIGNED", "reason": "ParamType.convert()/fail() (confirmed) are the core method contract; the 9 built-in subclasses are reference implementations."}
+{"query_id": "click-018", "repository": "click", "file": "docs/parameter-types.md", "grade": "TO_BE_ASSIGNED", "reason": "Documentation page matching the subject by name."}
+{"query_id": "click-019", "repository": "click", "file": "src/click/globals.py", "grade": "TO_BE_ASSIGNED", "reason": "get_current_context/push_context/pop_context implement the thread-local active-context stack."}
+{"query_id": "click-019", "repository": "click", "file": "src/click/core.py", "grade": "TO_BE_ASSIGNED", "reason": "Context is the object type being pushed/popped."}
+{"query_id": "click-020", "repository": "click", "file": "src/click/parser.py", "grade": "TO_BE_ASSIGNED", "reason": "_OptionParser/_Option/_Argument implement the low-level argument parsing."}
+{"query_id": "click-020", "repository": "click", "file": "src/click/core.py", "grade": "TO_BE_ASSIGNED", "reason": "Command/Parameter's parsing-invocation methods call into parser.py's internals."}

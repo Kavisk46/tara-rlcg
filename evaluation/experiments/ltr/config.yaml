@@ -1,0 +1,90 @@
+# Experiment configuration for the TARA RTS LTR pipeline.
+#
+# Loaded by `train.ExperimentConfig.from_yaml`. Every field here has a
+# corresponding, typed field in that dataclass (or in `model.ModelConfig`
+# for the `model:` section) -- an unknown or misspelled key fails fast
+# at config-load time with a clear error, not deep inside training.
+#
+# To reproduce a specific past run exactly, use the `config` block
+# saved in that run's `run_manifest.json` (outputs/models/<run_id>/)
+# instead of this file, which reflects only the *current* default
+# configuration.
+
+# Deterministic seed applied to every RNG this package touches
+# (Python's `random`, NumPy, `PYTHONHASHSEED`, and LightGBM's own
+# `random_state`/`seed`-driven internals via `model.random_state` below).
+# See utils.set_global_seed.
+seed: 42
+
+# Absolute or repo-root-relative path to the directory containing
+# train.jsonl / validation.jsonl / test.jsonl. Defaults to the frozen
+# RTS Dataset v1.0 location if omitted.
+merged_dataset_dir: "evaluation/rts_builder/pilot/merged_dataset"
+
+# Whether to compute the real Lexical/Dense/Graph/Hybrid retrieval
+# features (and the query/repository/graph/structural/resource
+# FeatureVector columns) by invoking the frozen Repository Loader ->
+# Parser -> Feature Extraction -> Retrieval Executor chain
+# (feature_pipeline.RetrievalFeatureProvider). Set to false only for
+# fast iteration/testing on the structural-only feature subset -- a
+# model trained with this false is not comparable to one trained with
+# it true, since the feature set differs.
+use_retrieval_features: true
+
+# Save a training checkpoint every this many boosting iterations
+# (model.LambdaRankModel.fit's checkpoint_every). 0 disables
+# checkpointing. See README.md's "Resuming an interrupted run" section.
+checkpoint_every: 25
+
+# Where trained-run artifacts (model.txt, encoders.json,
+# run_manifest.json, checkpoints/) are written, one subdirectory per
+# run (named by train.make_run_id). Defaults to outputs/models/.
+output_dir: "evaluation/experiments/ltr/outputs/models"
+
+# LightGBM LGBMRanker hyperparameters -- see model.ModelConfig for the
+# type/validity constraints on each field, and MODEL_JUSTIFICATION.md
+# for why lambdarank was chosen over XGBoost's/CatBoost's rankers.
+model:
+  objective: "lambdarank"
+  boosting_type: "gbdt"
+  metric: "ndcg"
+  # Cutoffs LightGBM reports validation NDCG at during training (used
+  # for early stopping); independent of evaluate.py's own NDCG@1/3/5,
+  # which is computed from scratch against the *final* chosen model,
+  # not read off LightGBM's training-time metric log.
+  eval_at: [1, 3, 5]
+
+  # Boosting-round budget. With early_stopping_rounds below and a
+  # validation set, actual training usually stops well short of this
+  # -- it is an upper bound, not a target.
+  n_estimators: 200
+  learning_rate: 0.05
+
+  # Regularization -- deliberately conservative given this dataset's
+  # small size (see MODEL_JUSTIFICATION.md's "Dataset characteristics"):
+  # a handful of hundred rows overfits very easily with an
+  # unconstrained leaf-wise learner.
+  num_leaves: 15
+  max_depth: 4
+  min_child_samples: 5
+  min_split_gain: 0.0
+  reg_alpha: 0.0
+  reg_lambda: 1.0
+  subsample: 0.9
+  subsample_freq: 1
+  colsample_bytree: 0.9
+
+  # Per-grade gain weights for the lambdarank objective's DCG
+  # computation. `null` (LightGBM's default: 2**label - 1, matching
+  # this project's own evaluate.py NDCG formula exactly) unless a
+  # specific re-weighting of the 0-3 relevance scale is later found
+  # necessary.
+  label_gain: null
+
+  random_state: 42
+  n_jobs: -1
+  verbosity: -1
+
+  # Stop if validation NDCG (averaged over eval_at) does not improve
+  # for this many consecutive rounds.
+  early_stopping_rounds: 20
