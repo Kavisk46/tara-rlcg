@@ -85,6 +85,23 @@ class TaraSettings(BaseSettings):
         "lexical search scores; the noisiest of the three fields, weighted lowest by default.",
     )
 
+    # --- Context Fusion ---
+    fusion_token_budget: int = Field(
+        default=4000,
+        gt=0,
+        description="Maximum approximate token count Context Fusion will pack into a single "
+        "FusedContext. Provisional default (PROJECT_SPEC.md §20.3 marks the real value TBD, "
+        "to be chosen relative to the target generation model's context window once one is "
+        "selected); override via TARA_FUSION_TOKEN_BUDGET once that decision is made.",
+    )
+    fusion_retriever_weights: dict[str, float] = Field(
+        default_factory=dict,
+        description="Optional per-RetrieverKind weight (keyed by RetrieverKind.value) applied when "
+        "merging multiple retrievers' normalized scores for the same deduplicated candidate. Empty "
+        "by default, meaning every retriever is weighted equally (1.0) -- PROJECT_SPEC.md §20.2 "
+        "specifies weighted score merging as the baseline without prescribing specific weights.",
+    )
+
     # --- Code generation ---
     llm_model_name: str = Field(
         default="gpt-4o-mini",

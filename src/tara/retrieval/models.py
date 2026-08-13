@@ -137,13 +137,23 @@ class RetrievedContext(BaseModel):
     a query (`tara.routing.models.RetrievalPlan.retrievers`); Context
     Fusion later merges one or more of these into a single fused
     context. `chunks` is expected to already be sorted by descending
-    relevance and already truncated to the requesting plan's `top_k`.
+    relevance and truncated to `RetrievalPlan.candidate_limit` -- the
+    pre-fusion candidate pool, deliberately larger than `top_k` when
+    reranking is planned (`RetrievalPlanner.plan`'s
+    `candidate_limit = top_k * 3` when `rerank` is set). The final cut
+    down to `top_k` is Context Fusion's responsibility, not an
+    individual retriever's, so it can rerank across the full pool
+    first; every concrete `Retriever` (`LexicalRetriever`,
+    `DenseRetriever`, `GraphRetriever`) documents this convention on its
+    own `retrieve` method.
     """
 
     retriever_kind: RetrieverKind = Field(..., description="Which retriever produced this context.")
     query: str = Field(..., description="The original query text this context was retrieved for.")
     chunks: list[RetrievedChunk] = Field(
-        default_factory=list, description="Retrieved chunks, sorted by descending relevance, truncated to the requested top_k."
+        default_factory=list,
+        description="Retrieved chunks, sorted by descending relevance, truncated to "
+        "candidate_limit (not yet to top_k -- see class docstring).",
     )
     total_candidates: int = Field(
         default=0, ge=0, description="Number of candidates considered before ranking/truncation, for diagnostics."

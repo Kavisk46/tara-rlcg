@@ -64,6 +64,17 @@ class RetrievalError(TaraError):
     """Raised when a retriever fails to produce results."""
 
 
+class OrchestrationError(RetrievalError):
+    """Raised when the retrieval orchestrator cannot execute a `RetrievalPlan` as given.
+
+    Reserved for defects in the plan itself (e.g. `execution_order` and
+    `retrievers` disagree on the retriever set) -- a data-integrity
+    problem with no sensible degraded execution, unlike a single
+    retriever being unregistered or failing at runtime, both of which
+    the orchestrator handles by skipping and logging, not raising.
+    """
+
+
 class ContextFusionError(TaraError):
     """Raised when retrieved context cannot be fused into a single generation context."""
 
