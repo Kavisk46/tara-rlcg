@@ -1,0 +1,14 @@
+{
+  "dataset_version": "v0.1-pilot",
+  "guideline_version": "schema-example-v1",
+  "tara_git_commit": null,
+  "created_at": "2026-01-01T00:00:00Z",
+  "changelog": [
+    {
+      "version": "v0.1-pilot",
+      "date": "2026-01-01T00:00:00Z",
+      "description": "Illustrative schema example only -- not a real dataset version.",
+      "changed_repository_ids": ["example-repo"]
+    }
+  ]
+}

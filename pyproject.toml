@@ -48,6 +48,9 @@ dev = [
     "ruff>=0.4",
     "pyyaml>=6.0",
 ]
+evaluation = [
+    "scipy>=1.11",
+]
 
 [project.urls]
 Repository = "https://github.com/kavimugilsk/tara-rlcg"

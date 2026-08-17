@@ -68,6 +68,10 @@ def make_context(
 def make_fused_chunk(
     *,
     chunk_id: str = "file::app.py::greet::5",
+    name: str = "greet",
+    file_path: str = "app.py",
+    content: str = "def greet(): ...",
+    docstring: str | None = None,
     found_by: tuple[RetrieverKind, ...] = (RetrieverKind.LEXICAL,),
     source_scores: dict[str, float] | None = None,
     fused_score: float = 0.5,
@@ -78,11 +82,12 @@ def make_fused_chunk(
     return FusedChunk(
         chunk_id=chunk_id,
         node_type=NodeType.FUNCTION,
-        name="greet",
-        file_path="app.py",
+        name=name,
+        file_path=file_path,
         start_line=start_line,
         end_line=end_line,
-        content="def greet(): ...",
+        content=content,
+        docstring=docstring,
         fused_score=fused_score,
         found_by=found_by,
         source_scores=(

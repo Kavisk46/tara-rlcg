@@ -1,0 +1,18 @@
+{
+  "schema_version": "tiqs-schema-example-v1",
+  "entries": [
+    {
+      "repository_id": "example-repo",
+      "source_url": "https://example.invalid/example-org/example-repo.git",
+      "commit_sha": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+      "license": "MIT",
+      "language": "python",
+      "size_bucket": "small",
+      "lines_of_code": 1200,
+      "domain": "example_domain",
+      "split": "train",
+      "added_at": "2026-01-01T00:00:00Z",
+      "changelog_note": null
+    }
+  ]
+}
