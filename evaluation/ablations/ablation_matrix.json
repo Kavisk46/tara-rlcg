@@ -1,0 +1,196 @@
+{
+  "schema_version": "1.0",
+  "ablations": [
+    {
+      "ablation_id": "A1",
+      "name": "No Task Classifier / no Router",
+      "tests": "The entire routing layer's contribution, in one step.",
+      "status": "supported",
+      "controlled_variable_exceptions": [],
+      "variants": [
+        {
+          "variant_id": "A1-no-router",
+          "description": "Equivalent to baseline B1 (fixed semantic-only): every query routed to SEMANTIC_ONLY regardless of classification, per EXPERIMENT_PLAN.md §5's own framing ('Equivalent to B1... isolates the entire routing layer's contribution in one step'). No new mechanism -- reuses the already-implemented baseline directly rather than duplicating it.",
+          "mechanism": "evaluation.baselines.definitions.BASELINE_DEFINITIONS (the entry with baseline_id == BaselineId.B1)",
+          "parameters": {}
+        }
+      ],
+      "prerequisite_notes": null
+    },
+    {
+      "ablation_id": "A2",
+      "name": "No REFACTOR override",
+      "tests": "The specific hand-authored FullPipelinePolicy REFACTOR exception (CONTRIBUTIONS.md §2).",
+      "status": "supported",
+      "controlled_variable_exceptions": [],
+      "variants": [
+        {
+          "variant_id": "A2-no-refactor-override",
+          "description": "AdaptiveRouter constructed with ablated_policies(): FullPipelinePolicyWithoutRefactorOverride in place of FullPipelinePolicy, every other DEFAULT_POLICIES member unchanged.",
+          "mechanism": "evaluation.ablations.policies.ablated_policies",
+          "parameters": {}
+        }
+      ],
+      "prerequisite_notes": null
+    },
+    {
+      "ablation_id": "A3",
+      "name": "Graph retrieval disabled",
+      "tests": "The marginal value of graph retrieval specifically.",
+      "status": "supported",
+      "controlled_variable_exceptions": [],
+      "variants": [
+        {
+          "variant_id": "A3-no-graph",
+          "description": "RepositoryContext transformed so RetrievalPlanner's own context-capability-downgrade path drops GRAPH from every plan; register no GraphRetriever in the RetrievalOrchestrator as a second safeguard.",
+          "mechanism": "evaluation.ablations.context_transforms.disable_graph_retrieval",
+          "parameters": {}
+        }
+      ],
+      "prerequisite_notes": null
+    },
+    {
+      "ablation_id": "A4",
+      "name": "Fixed top-k",
+      "tests": "Whether strategy-specific result-count tuning matters independent of strategy selection.",
+      "status": "supported",
+      "controlled_variable_exceptions": [],
+      "variants": [
+        {
+          "variant_id": "A4-fixed-top-k-10",
+          "description": "Every plan's top_k forced to 10 (the current SEMANTIC_ONLY default, chosen as a neutral fixed value already inside the existing per-strategy range of 8-20), candidate_limit recomputed to match.",
+          "mechanism": "evaluation.ablations.router_wrappers.FixedTopKRouter",
+          "parameters": {
+            "fixed_top_k": 10
+          }
+        }
+      ],
+      "prerequisite_notes": null
+    },
+    {
+      "ablation_id": "A5",
+      "name": "No reranking",
+      "tests": "Reranking's own contribution within Context Fusion.",
+      "status": "supported",
+      "controlled_variable_exceptions": [],
+      "variants": [
+        {
+          "variant_id": "A5-no-rerank",
+          "description": "Every plan's rerank forced False, candidate_limit recomputed down to top_k.",
+          "mechanism": "evaluation.ablations.router_wrappers.NoRerankRouter",
+          "parameters": {}
+        }
+      ],
+      "prerequisite_notes": null
+    },
+    {
+      "ablation_id": "A6",
+      "name": "Reranker variant (cross-encoder vs. score-merge)",
+      "tests": "Which reranking approach is worth its cost.",
+      "status": "unsupported_tbd",
+      "controlled_variable_exceptions": [],
+      "variants": [],
+      "prerequisite_notes": "Requires a CrossEncoderReranker implementation in tara.fusion.reranker; none exists. M7 (Context Fusion) explicitly scoped cross-encoder reranking out ('Do NOT implement cross-encoder reranking yet') and it has not been built since. Only the score-merge baseline (tara.fusion.reranker.BaselineReranker) exists today, so this ablation cannot yet compare two variants -- building a cross-encoder reranker is a real ML-component decision (model choice, latency profiling) out of scope for this milestone."
+    },
+    {
+      "ablation_id": "A7",
+      "name": "Confidence-threshold fallback sweep",
+      "tests": "Quality/coverage trade-off from confidence-gated fallback.",
+      "status": "supported",
+      "controlled_variable_exceptions": [],
+      "variants": [
+        {
+          "variant_id": "A7-threshold-0.3",
+          "description": "Router wrapped so classifications with confidence < 0.3 are forced to SEMANTIC_ONLY instead of the real routing decision.",
+          "mechanism": "evaluation.ablations.router_wrappers.ConfidenceThresholdFallbackRouter",
+          "parameters": {
+            "confidence_threshold": 0.3
+          }
+        },
+        {
+          "variant_id": "A7-threshold-0.4",
+          "description": "Router wrapped so classifications with confidence < 0.4 are forced to SEMANTIC_ONLY instead of the real routing decision.",
+          "mechanism": "evaluation.ablations.router_wrappers.ConfidenceThresholdFallbackRouter",
+          "parameters": {
+            "confidence_threshold": 0.4
+          }
+        },
+        {
+          "variant_id": "A7-threshold-0.5",
+          "description": "Router wrapped so classifications with confidence < 0.5 are forced to SEMANTIC_ONLY instead of the real routing decision.",
+          "mechanism": "evaluation.ablations.router_wrappers.ConfidenceThresholdFallbackRouter",
+          "parameters": {
+            "confidence_threshold": 0.5
+          }
+        },
+        {
+          "variant_id": "A7-threshold-0.6",
+          "description": "Router wrapped so classifications with confidence < 0.6 are forced to SEMANTIC_ONLY instead of the real routing decision.",
+          "mechanism": "evaluation.ablations.router_wrappers.ConfidenceThresholdFallbackRouter",
+          "parameters": {
+            "confidence_threshold": 0.6
+          }
+        },
+        {
+          "variant_id": "A7-threshold-0.7",
+          "description": "Router wrapped so classifications with confidence < 0.7 are forced to SEMANTIC_ONLY instead of the real routing decision.",
+          "mechanism": "evaluation.ablations.router_wrappers.ConfidenceThresholdFallbackRouter",
+          "parameters": {
+            "confidence_threshold": 0.7
+          }
+        }
+      ],
+      "prerequisite_notes": null
+    },
+    {
+      "ablation_id": "A8",
+      "name": "Embedding model swap",
+      "tests": "Sensitivity of results to embedding model choice.",
+      "status": "supported",
+      "controlled_variable_exceptions": [
+        "embedding_model_name"
+      ],
+      "variants": [
+        {
+          "variant_id": "A8-bge-small",
+          "description": "TARA's current default embedding model.",
+          "mechanism": "tara.core.config.TaraSettings.embedding_model_name",
+          "parameters": {
+            "embedding_model_name": "BAAI/bge-small-en-v1.5"
+          }
+        },
+        {
+          "variant_id": "A8-minilm-l6",
+          "description": "A smaller, widely-used general-purpose sentence-embedding model.",
+          "mechanism": "tara.core.config.TaraSettings.embedding_model_name",
+          "parameters": {
+            "embedding_model_name": "sentence-transformers/all-MiniLM-L6-v2"
+          }
+        }
+      ],
+      "prerequisite_notes": "A third, code-domain-specific variant (candidate: jinaai/jina-embeddings-v2-base-code) is named in EXPERIMENT_PLAN.md §5 but marked 'final choice TBD' there -- not included as a variant here since no final model has actually been chosen; adding one speculatively would not be a real, reproducible configuration. The two variants above ARE fully supported: TaraSettings.embedding_model_name and SentenceTransformerEmbedder already accept any sentence-transformers model name with no new code required."
+    },
+    {
+      "ablation_id": "A9",
+      "name": "TaskClassification surfaced to LLM vs. not",
+      "tests": "Whether the classification is useful beyond its use in retrieval selection.",
+      "status": "supported",
+      "controlled_variable_exceptions": [],
+      "variants": [
+        {
+          "variant_id": "A9-baseline",
+          "description": "TaskClassification omitted from the generation prompt (current default).",
+          "mechanism": "tara.generation.prompt.PromptTemplate.BASELINE",
+          "parameters": {}
+        },
+        {
+          "variant_id": "A9-with-classification",
+          "description": "TaskClassification (task type + routing reason) included in the generation prompt.",
+          "mechanism": "tara.generation.prompt.PromptTemplate.WITH_TASK_CLASSIFICATION",
+          "parameters": {}
+        }
+      ],
+      "prerequisite_notes": null
+    }
+  ]
+}

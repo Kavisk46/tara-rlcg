@@ -314,6 +314,7 @@ def test_config_json_round_trip(tmp_path: Path) -> None:
         variant_ids=["TARA", "B0", "B1"],
         generation_model="fake-model",
         token_budget=4000,
+        embedding_model_name="fake-embedding-model",
         prompt_template="baseline",
         k_values=[5, 10],
     )

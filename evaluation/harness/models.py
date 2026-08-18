@@ -9,6 +9,7 @@ honest value in that situation, never a fabricated `0.0`.
 """
 from __future__ import annotations
 
+from collections.abc import Callable
 from dataclasses import dataclass, field
 from datetime import datetime
 from typing import Any
@@ -19,6 +20,7 @@ from evaluation.baselines.definitions import BaselineDefinition
 from tara.classification.models import TaskClassification
 from tara.context.models import RepositoryContext
 from tara.core.types import Language, TaskType
+from tara.interfaces.router import Router
 from tara.routing.strategy import RoutingStrategy
 
 TARA_VARIANT_ID = "TARA"
@@ -41,9 +43,9 @@ class Variant:
 
     Three states, matching `evaluation.baselines.plan_builder`'s own
     Router-isolation design (see `BASELINE_DISCREPANCIES.md`, "Router
-    isolation"): `is_adaptive=True` (TARA-proper: build the plan via a
-    real, freshly-constructed `AdaptiveRouter().route()` call --
-    `strategy` is ignored); `is_adaptive=False, strategy=<value>` (a
+    isolation"): `is_adaptive=True` (TARA-proper, or an M12 ablation of
+    it: build the plan via `(router_factory or AdaptiveRouter)().route()`
+    -- `strategy` is ignored); `is_adaptive=False, strategy=<value>` (a
     baseline with a fixed strategy: build the plan via
     `evaluation.baselines.plan_builder.build_fixed_plan`, which never
     constructs or calls `AdaptiveRouter`/`RoutingPolicy`); `is_adaptive=False,
@@ -53,6 +55,16 @@ class Variant:
     variant_id: str
     strategy: RoutingStrategy | None = None
     is_adaptive: bool = False
+    router_factory: Callable[[], Router] | None = None
+    """For ablations of TARA's own adaptive routing (M12: A2, A4, A5, A7) -- overrides how the
+    `is_adaptive` branch builds its `Router`. `None` (the default) means "construct a plain
+    `AdaptiveRouter()`," TARA-proper's exact unablated behavior; only consulted when
+    `is_adaptive=True`. A baseline `Variant` (`is_adaptive=False`) never sets this: baselines must
+    never construct any `Router` at all, per `evaluation.baselines`'s own Router-isolation
+    guarantee -- see `evaluation/baselines/BASELINE_DISCREPANCIES.md`. This field exists on
+    `Variant`, not on `evaluation.baselines.definitions.BaselineDefinition`, specifically so
+    ablating TARA's router can never be confused with, or accidentally enable, a baseline that
+    touches one."""
 
 
 def variant_from_baseline(baseline: BaselineDefinition) -> Variant:
@@ -73,6 +85,21 @@ def tara_variant() -> Variant:
     instead of `build_fixed_plan`.
     """
     return Variant(variant_id=TARA_VARIANT_ID, is_adaptive=True)
+
+
+def ablated_router_variant(variant_id: str, router_factory: Callable[[], Router]) -> Variant:
+    """A `Variant` for an M12 router-level ablation of TARA (A2, A4, A5, A7).
+
+    Args:
+        variant_id: A distinct id for this ablation variant, e.g.
+            `"A4-fixed-top-k-10"` (see `evaluation.ablations.definitions`).
+        router_factory: Builds the ablated `Router` -- e.g.
+            `lambda: FixedTopKRouter(AdaptiveRouter(), fixed_top_k=10)`.
+
+    Returns:
+        `Variant(variant_id=variant_id, is_adaptive=True, router_factory=router_factory)`.
+    """
+    return Variant(variant_id=variant_id, is_adaptive=True, router_factory=router_factory)
 
 
 class GroundTruth(BaseModel):
@@ -172,6 +199,12 @@ class ExperimentConfig(BaseModel):
     variant_ids: list[str] = Field(..., min_length=1)
     generation_model: str = Field(..., min_length=1)
     token_budget: int = Field(..., gt=0)
+    embedding_model_name: str = Field(
+        ..., min_length=1, description="tara.core.config.TaraSettings.embedding_model_name used "
+        "to build every RepositoryContext this experiment ran against -- required so "
+        "evaluation.ablations.validation can detect an accidental A8 (embedding model) mismatch "
+        "between two runs that were supposed to hold this constant."
+    )
     prompt_template: str = Field(...)
     k_values: list[int] = Field(
         ..., min_length=1, description="The k values Precision@k/Recall@k/NDCG@k are computed at."

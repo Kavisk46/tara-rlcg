@@ -12,7 +12,9 @@ query's `GroundTruth` doesn't support.
 Deliberately does not depend on `evaluation.baselines.runner.BaselineRunner`:
 that class's tested M10 contract (no per-stage timing, no metrics) is
 left unchanged; this runner composes the same underlying collaborators
-directly instead -- `AdaptiveRouter` only for the TARA-proper `Variant`
+directly instead -- `AdaptiveRouter` (or, for an M12 router-level
+ablation, `Variant.router_factory`'s own wrapped `Router` -- see
+`evaluation.ablations.router_wrappers`) for the TARA-proper `Variant`
 (`Variant.is_adaptive`), `evaluation.baselines.plan_builder.build_fixed_plan`
 for every baseline `Variant` (never `AdaptiveRouter`/`RoutingPolicy`, per
 `evaluation.baselines`'s own Router-isolation guarantee -- see
@@ -153,8 +155,8 @@ class ExperimentRunner:
 
         if variant.is_adaptive:
             t0 = time.perf_counter()
-            router = AdaptiveRouter()
-            plan = router.route(query.classification, query.context)
+            build_router = variant.router_factory or AdaptiveRouter
+            plan = build_router().route(query.classification, query.context)
             routing_latency_ms = (time.perf_counter() - t0) * 1000
 
             t1 = time.perf_counter()

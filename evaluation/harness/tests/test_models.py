@@ -57,6 +57,7 @@ def test_experiment_config_round_trips() -> None:
         variant_ids=["TARA", "B0"],
         generation_model="fake-model",
         token_budget=1000,
+        embedding_model_name="fake-embedding-model",
         prompt_template="baseline",
         k_values=[5],
     )
@@ -71,6 +72,7 @@ def test_experiment_config_rejects_zero_token_budget() -> None:
             variant_ids=["TARA"],
             generation_model="fake-model",
             token_budget=0,
+            embedding_model_name="fake-embedding-model",
             prompt_template="baseline",
             k_values=[5],
         )
@@ -84,8 +86,23 @@ def test_experiment_config_rejects_empty_k_values() -> None:
             variant_ids=["TARA"],
             generation_model="fake-model",
             token_budget=1000,
+            embedding_model_name="fake-embedding-model",
             prompt_template="baseline",
             k_values=[],
+        )
+
+
+def test_experiment_config_rejects_empty_embedding_model_name() -> None:
+    with pytest.raises(ValidationError):
+        ExperimentConfig(
+            experiment_id="exp-1",
+            created_at=datetime(2026, 1, 1, tzinfo=timezone.utc),
+            variant_ids=["TARA"],
+            generation_model="fake-model",
+            token_budget=1000,
+            embedding_model_name="",
+            prompt_template="baseline",
+            k_values=[5],
         )
 
 
