@@ -30,6 +30,13 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 
+from evaluation.baselines.complexity_router import (
+    BASELINE_ID as COMPLEXITY_BASELINE_ID,
+)
+from evaluation.baselines.complexity_router import (
+    ComplexityBaselineRunResult,
+    build_complexity_plan,
+)
 from evaluation.baselines.definitions import BaselineDefinition, BaselineId
 from evaluation.baselines.plan_builder import build_fixed_plan
 from tara.classification.models import TaskClassification
@@ -182,6 +189,71 @@ class BaselineRunner:
         generated_code = self._service.generate(query, fused_context)
         return BaselineRunResult(
             baseline_id=baseline.baseline_id,
+            plan=plan,
+            fused_context=fused_context,
+            generated_code=generated_code,
+        )
+
+    def build_complexity_plan(
+        self,
+        query: str,
+        classification: TaskClassification,
+        context: RepositoryContext,
+    ) -> RetrievalPlan:
+        """Build the COMPLEXITY_ROUTER baseline's plan for `query`.
+
+        See `evaluation.baselines.complexity_router` for the
+        task-agnostic, query-complexity-based strategy selection this
+        delegates to. Never constructs or calls
+        `AdaptiveRouter`/`RoutingPolicy`, exactly like `.build_plan()`'s
+        use of `evaluation.baselines.plan_builder.build_fixed_plan` for
+        B0-B4.
+
+        Purely additive: does not alter `.build_plan()`'s behavior for
+        any `BaselineDefinition`.
+        """
+        return build_complexity_plan(query, classification, context)
+
+    def run_complexity_baseline(
+        self,
+        query: str,
+        classification: TaskClassification,
+        context: RepositoryContext,
+    ) -> ComplexityBaselineRunResult:
+        """Run the COMPLEXITY_ROUTER baseline end to end for `query`.
+
+        Mirrors `.run()`'s retrieve -> fuse -> generate pipeline
+        exactly, substituting COMPLEXITY_ROUTER's query-complexity
+        -derived plan for a fixed-strategy baseline's plan or TARA's
+        adaptive router's plan. Reuses the same injected
+        `RetrievalOrchestrator`, `ContextFusion`, and
+        `CodeGenerationService` every other baseline and TARA-proper run
+        through this instance share -- the same fairness guarantee
+        `.run()` documents applies here unchanged.
+
+        Purely additive: does not read or modify any state `.run()`/
+        `.build_plan()` use for B0-B4.
+
+        Args:
+            query: The developer query text.
+            classification: The query's `TaskClassification`. Passed
+                through only to `RetrievalPlanner.plan` (via
+                `build_complexity_plan`); never consulted to select this
+                baseline's strategy.
+            context: The repository context to retrieve against.
+
+        Returns:
+            A `ComplexityBaselineRunResult` with the plan built, the
+            fused context, and the final `GeneratedCode`.
+        """
+        plan = self.build_complexity_plan(query, classification, context)
+        retrieved_contexts = self._orchestrator.execute(query, plan, context)
+        fused_context = self._fusion.fuse(
+            query, retrieved_contexts, plan, self._settings.fusion_token_budget
+        )
+        generated_code = self._service.generate(query, fused_context)
+        return ComplexityBaselineRunResult(
+            baseline_id=COMPLEXITY_BASELINE_ID,
             plan=plan,
             fused_context=fused_context,
             generated_code=generated_code,
