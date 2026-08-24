@@ -1,6 +1,6 @@
 # QC Validation Report -- mode=final
 
-Input: `annotation_queue.jsonl`
+Input: `C:\Projects\tara-rlcg\evaluation\rts_builder\pilot\final_human_annotation\annotation_queue.jsonl`
 Records: 439
 
 ## Structural checks
